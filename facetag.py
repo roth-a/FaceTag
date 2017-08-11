@@ -181,7 +181,8 @@ if args['shuffle']:
 
 
 
-for pic in pics:
+for pic_idx, pic in enumerate(pics):
+    print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+len(pics))
     print('Loading: '+pic)
     try:
         RotateImg(pic)
@@ -249,6 +250,8 @@ for pic in pics:
 
             # periodically save the database
             pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
+    except KeyboardInterrupt: 
+        raise
     except:
         print('Error in processing image. Skipping.')    
 
