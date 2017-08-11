@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[86]:
+# In[112]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -13,7 +13,7 @@
 # pip install face_recognition
 
 import face_recognition
-import os, sys
+import os, sys,stat
 import numpy as np
 import piexif
 import matplotlib.pyplot as plt
@@ -22,13 +22,12 @@ import pickle #pickle.dump( data, open( "file.save", "wb" ) ) #data = pickle.loa
 import subprocess 
 from pathlib import Path
 
-
 plt.rcParams['toolbar'] = 'None'
 
 
 # ## Functions
 
-# In[87]:
+# In[113]:
 
 def in_notebook():
     """
@@ -132,14 +131,15 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[88]:
+# In[114]:
 
 args = {
-    'folder' : ['/home/alexander/Bilder/Familie'],
+    'folder' : ['demo'],
     'database' : 'Face_encodings.save',
     'shuffle' : True,
     'softlinks' : True,
     'softlink_folder' : 'People folders',
+    'ignore_readonly' : True,
 }
 
 
@@ -158,7 +158,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[89]:
+# In[115]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -174,7 +174,7 @@ else:
 
 # ## Recognize Faces
 
-# In[97]:
+# In[116]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -182,13 +182,13 @@ if args['shuffle']:
 
 
     
-def ChooseClosestMatch(matches_bool, src_enc):
+def ChooseClosestMatch(matches_bool, src_enc, show_img=True):
     red_faces = faces['names'][matches_bool]
     distances = face_recognition.face_distance(faces['encs'][matches_bool], src_enc)
     print('Multiple possible Faces found:\n'+ 
           arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
     name = red_faces[np.argmin(distances)]
-    ShowImg(pic,title=name,  trim=locs[i], Timer=1)
+    if show_img:  ShowImg(pic,title=name,  trim=locs[i], Timer=1)
     print('Choosing the closest match: '+name)     
     return name
 
@@ -201,6 +201,12 @@ for pic_idx, pic in enumerate(pics):
     print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
     print('Loading: '+pic)
     try:
+        # make it writable
+        if args['ignore_readonly']:
+            st = os.stat(pic)
+            os.chmod(pic, st.st_mode | stat.S_IWUSR)
+
+
         RotateImg(pic)
         pic_data = ShowImg(pic, Timer=None)
 
@@ -239,7 +245,7 @@ for pic_idx, pic in enumerate(pics):
                 print('Extending tolerance:')
                 matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=1) )
                 if matches_bool.any():
-                    new_name = ChooseClosestMatch(matches_bool, encs[i])
+                    new_name = ChooseClosestMatch(matches_bool, encs[i], show_img=False)
                     mc = MultipleChoice([new_name+' is correct.', 'empty for Skip', 'Write any name to add it'], 
                                       post='Please enter something')
                     if mc !='0':  new_name = mc   # mc can be empty. then it will skip later
