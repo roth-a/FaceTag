@@ -174,7 +174,7 @@ else:
 
 # ## Recognize Faces
 
-# In[72]:
+# In[73]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -241,7 +241,8 @@ for pic_idx, pic in enumerate(pics):
                     namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
                     if not os.path.exists(namefolder):    os.makedirs(namefolder)    
                     relative_from_subfolder = os.path.join('..','..',pic)
-                    os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
+                    if not os.path.exists(os.path.join(namefolder,Path2Filename(pic))):
+                        os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
 
 
             # periodically save the database
