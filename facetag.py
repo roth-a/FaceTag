@@ -210,15 +210,13 @@ for pic_idx, pic in enumerate(pics):
 
             
             if matches_bool.any():
+                ShowImg(pic, trim=locs[i], Timer=1)
                 red_faces = faces['names'][matches_bool]
                 distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
                 print('Multiple possible Faces found:\n'+ 
                       arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
                 names += [red_faces[np.argmin(distances)]]                        
                 print('Choosing the closest match: '+names[-1])                    
-                
-                
-                plt.close()
             else:
                 ShowImg(pic, trim=locs[i], Timer=None)
                 new_name = input('Please name this face (empty if you want to skip): ')
