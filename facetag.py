@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[64]:
+# In[86]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -28,7 +28,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[71]:
+# In[87]:
 
 def in_notebook():
     """
@@ -132,10 +132,10 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[66]:
+# In[88]:
 
 args = {
-    'folder' : ['demo'],
+    'folder' : ['/home/alexander/Bilder/Familie'],
     'database' : 'Face_encodings.save',
     'shuffle' : True,
     'softlinks' : True,
@@ -154,12 +154,11 @@ if not in_notebook():
     for k,v in vars(parser.parse_args()).items():
         args[k] = v
     
-    
 
 
 # ## Load Database
 
-# In[67]:
+# In[89]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -170,17 +169,33 @@ else:
     }
     
     
+    
 
 
 # ## Recognize Faces
 
-# In[73]:
+# In[97]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
     np.random.shuffle(pics)
 
 
+    
+def ChooseClosestMatch(matches_bool, src_enc):
+    red_faces = faces['names'][matches_bool]
+    distances = face_recognition.face_distance(faces['encs'][matches_bool], src_enc)
+    print('Multiple possible Faces found:\n'+ 
+          arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
+    name = red_faces[np.argmin(distances)]
+    ShowImg(pic,title=name,  trim=locs[i], Timer=1)
+    print('Choosing the closest match: '+name)     
+    return name
+
+def AddFace(name,enc):
+    faces['encs'] = np.vstack([faces['encs'],enc])
+    faces['names'] = np.hstack([faces['names'],name])
+        
 
 for pic_idx, pic in enumerate(pics):
     print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
@@ -211,23 +226,32 @@ for pic_idx, pic in enumerate(pics):
 
             
             if matches_bool.any():
-                red_faces = faces['names'][matches_bool]
-                distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
-                print('Multiple possible Faces found:\n'+ 
-                      arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
-                names += [red_faces[np.argmin(distances)]]                        
-                ShowImg(pic,title=names[-1],  trim=locs[i], Timer=1)
-                print('Choosing the closest match: '+names[-1])                    
+                names += [ChooseClosestMatch(matches_bool, encs[i])]
+#                 red_faces = faces['names'][matches_bool]
+#                 distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
+#                 print('Multiple possible Faces found:\n'+ 
+#                       arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
+#                 names += [red_faces[np.argmin(distances)]]                        
+#                 ShowImg(pic,title=names[-1],  trim=locs[i], Timer=1)
+#                 print('Choosing the closest match: '+names[-1])                    
             else:
                 ShowImg(pic, trim=locs[i], Timer=None)
-                new_name = input('Please name this face (empty if you want to skip): ')
+                print('Extending tolerance:')
+                matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=1) )
+                if matches_bool.any():
+                    new_name = ChooseClosestMatch(matches_bool, encs[i])
+                    mc = MultipleChoice([new_name+' is correct.', 'empty for Skip', 'Write any name to add it'], 
+                                      post='Please enter something')
+                    if mc !='0':  new_name = mc   # mc can be empty. then it will skip later
+                else:                        
+                    new_name = input('Please name this face (empty if you want to skip): ')
+                plt.close()
+                
                 if new_name!='':
                     names += [new_name]
-                    faces['encs'] = np.vstack([faces['encs'],encs[i]])
-                    faces['names'] = np.hstack([faces['names'],new_name])
+                    AddFace(new_name, encs[i])
                 else:
                     print('Ok. Skipping.')
-                plt.close()
 
 
         if len(names)>0:   # only do something if there were faces
@@ -249,12 +273,7 @@ for pic_idx, pic in enumerate(pics):
             pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
     except KeyboardInterrupt: 
         raise
-    #except:
-    #    print('Error in processing image. Skipping.')    
-
-
-
-# In[ ]:
-
+    except:
+        print('Error in processing image. Skipping.')    
 
 
