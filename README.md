@@ -14,6 +14,7 @@ or in a jupyter notebook.
 ### Give a picture directory
 `python face-rec.py  --folder demo`
 and it will recursively get all jpg files.
+
 ![](res/pics.jpg)
 and also rotate them according to the Orientation exif tag using [jhead](http://www.sentex.net/~mwandel/jhead/).
 
@@ -23,10 +24,12 @@ It asks for the names of all unknown people in a picture and adds them to it's n
 ![](res/demo2.jpg)
 ### Exif Comment Tag
 The exif user_comment tag is filled with the names from the left to the right :-) 
+
 ![](res/exif.jpg)
 
 ### Face recognition and labeling already working automatically
 Already in the next picture it can recognize Barack and no user action is needed.
+
 ![](res/demo3.jpg)
 ![](res/demo6.jpg)
 
