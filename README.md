@@ -31,6 +31,7 @@ The exif user_comment tag is filled with the names from the left to the right :-
 Already in the next picture it can recognize Barack and no user action is needed.
 
 ![](res/demo3.jpg)
+
 ![](res/demo6.jpg)
 
 ### Folders with Softlinks  
