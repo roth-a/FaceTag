@@ -7,7 +7,7 @@ Organizes pictures according to peoples faces in the pictures. It also writes th
 
 It can be used in the console using
 ```
-python face-rec.py
+python facetag.py
 ```
 or in a jupyter notebook.
 
@@ -15,7 +15,7 @@ or in a jupyter notebook.
 
 ### Give a picture directory
 ```
-python face-rec.py  --folder demo
+python facetag.py  --folder demo
 ```
 and it will recursively get all jpg files.
 
