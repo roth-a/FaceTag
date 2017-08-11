@@ -223,8 +223,8 @@ for pic in pics:
         else:
             ShowImg(pic, trim=locs[i], Timer=None)
             new_name = input('Please name this face (empty if you want to skip): ')
-            names += [new_name]
             if new_name!='':
+                names += [new_name]
                 faces['encs'] = np.vstack([faces['encs'],encs[i]])
                 faces['names'] = np.vstack([faces['names'],new_name])
             else:
