@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[5]:
+# In[64]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -28,7 +28,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[6]:
+# In[71]:
 
 def in_notebook():
     """
@@ -62,7 +62,7 @@ def ExpandDirectories(flist, ending='.jpg', not_conatin=None):
 
 
 
-def ShowImg(pic, trim=None, Timer=1):
+def ShowImg(pic, title='', trim=None, Timer=1):
     if isinstance(pic,str):
         data = mpimg.imread(pic)
     else:
@@ -73,6 +73,7 @@ def ShowImg(pic, trim=None, Timer=1):
         fig = plt.imshow(data)
     fig.axes.get_xaxis().set_visible(False)
     fig.axes.get_yaxis().set_visible(False)
+    plt.suptitle(title) 
     if Timer!=None:
         plt.show(block=False)
         if not in_notebook(): plt.pause(Timer)
@@ -131,7 +132,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[7]:
+# In[66]:
 
 args = {
     'folder' : ['demo'],
@@ -158,7 +159,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[8]:
+# In[67]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -173,7 +174,7 @@ else:
 
 # ## Recognize Faces
 
-# In[62]:
+# In[72]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -210,12 +211,12 @@ for pic_idx, pic in enumerate(pics):
 
             
             if matches_bool.any():
-                ShowImg(pic, trim=locs[i], Timer=1)
                 red_faces = faces['names'][matches_bool]
                 distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
                 print('Multiple possible Faces found:\n'+ 
                       arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
                 names += [red_faces[np.argmin(distances)]]                        
+                ShowImg(pic,title=names[-1],  trim=locs[i], Timer=1)
                 print('Choosing the closest match: '+names[-1])                    
             else:
                 ShowImg(pic, trim=locs[i], Timer=None)
