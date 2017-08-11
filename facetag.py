@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[5]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -28,7 +28,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[2]:
+# In[6]:
 
 def in_notebook():
     """
@@ -131,7 +131,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[3]:
+# In[7]:
 
 args = {
     'folder' : ['demo'],
@@ -158,7 +158,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[4]:
+# In[8]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -173,7 +173,7 @@ else:
 
 # ## Recognize Faces
 
-# In[5]:
+# In[62]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -182,7 +182,7 @@ if args['shuffle']:
 
 
 for pic_idx, pic in enumerate(pics):
-    print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+len(pics))
+    print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
     print('Loading: '+pic)
     try:
         RotateImg(pic)
@@ -206,29 +206,26 @@ for pic_idx, pic in enumerate(pics):
         if len(encs) ==0: print('No faces found.')
         names = []
         for i in range(len(encs)):
-            matches = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=0.45) )
+            matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=0.48) )
 
-            if matches.any():
-                matches, found_idxs  = np.unique( faces['names'][matches], return_index=True) 
-
-                if len(matches)==1:
-                    names += [matches[0]]
-                    print( matches[0])    
-                    ShowImg(pic, trim=locs[i], Timer=1.5)
-                else:                 
-                    ShowImg(pic, trim=locs[i], Timer=None)
-                    print('Multiple Faces found: '+ arr2str(matches))
-                    name_idx = int(MultipleChoice(matches, post='Which is the correct name?'))
-                    if name_idx in range(len(matches)):
-                        names += [matches[name_idx]]    
-                    plt.close()
+            
+            if matches_bool.any():
+                red_faces = faces['names'][matches_bool]
+                distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
+                print('Multiple possible Faces found:\n'+ 
+                      arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
+                names += [red_faces[np.argmin(distances)]]                        
+                print('Choosing the closest match: '+names[-1])                    
+                
+                
+                plt.close()
             else:
                 ShowImg(pic, trim=locs[i], Timer=None)
                 new_name = input('Please name this face (empty if you want to skip): ')
                 if new_name!='':
                     names += [new_name]
                     faces['encs'] = np.vstack([faces['encs'],encs[i]])
-                    faces['names'] = np.vstack([faces['names'],new_name])
+                    faces['names'] = np.hstack([faces['names'],new_name])
                 else:
                     print('Ok. Skipping.')
                 plt.close()
@@ -240,7 +237,7 @@ for pic_idx, pic in enumerate(pics):
 
 
             # safe softlink
-            if args['softlinks']:
+            if args['softlinks'] and len(pics)>1:
                 for name in names:
                     namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
                     if not os.path.exists(namefolder):    os.makedirs(namefolder)    
@@ -252,13 +249,8 @@ for pic_idx, pic in enumerate(pics):
             pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
     except KeyboardInterrupt: 
         raise
-    except:
-        print('Error in processing image. Skipping.')    
-
-
-
-# In[ ]:
-
+    #except:
+    #    print('Error in processing image. Skipping.')    
 
 
 
