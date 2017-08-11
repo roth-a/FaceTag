@@ -183,72 +183,74 @@ if args['shuffle']:
 
 for pic in pics:
     print('Loading: '+pic)
-    RotateImg(pic)
-    pic_data = ShowImg(pic, Timer=None)
+    try:
+        RotateImg(pic)
+        pic_data = ShowImg(pic, Timer=None)
 
-    print('Detecting faces....')
-    image = face_recognition.load_image_file(pic)
-    locs = face_recognition.face_locations(image)
-    encs = face_recognition.face_encodings(image, known_face_locations=locs)
-    
-    
-    # sort according to x coordinate  (left to right)
-    x_coors = np.array([l[1] for l in locs])
-    sort_idxs = np.argsort(x_coors)
-    locs = [locs[idx] for idx in sort_idxs]
-    encs = [encs[idx] for idx in sort_idxs]
-    
-    plt.close()
-    
-    # recognize each face
-    if len(encs) ==0: print('No faces found.')
-    names = []
-    for i in range(len(encs)):
-        matches = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=0.45) )
-        
-        if matches.any():
-            matches, found_idxs  = np.unique( faces['names'][matches], return_index=True) 
-            
-            if len(matches)==1:
-                names += [matches[0]]
-                print( matches[0])    
-                ShowImg(pic, trim=locs[i], Timer=1.5)
-            else:                 
-                ShowImg(pic, trim=locs[i], Timer=None)
-                print('Multiple Faces found: '+ arr2str(matches))
-                name_idx = int(MultipleChoice(matches, post='Which is the correct name?'))
-                if name_idx in range(len(matches)):
-                    names += [matches[name_idx]]    
-                plt.close()
-        else:
-            ShowImg(pic, trim=locs[i], Timer=None)
-            new_name = input('Please name this face (empty if you want to skip): ')
-            if new_name!='':
-                names += [new_name]
-                faces['encs'] = np.vstack([faces['encs'],encs[i]])
-                faces['names'] = np.vstack([faces['names'],new_name])
+        print('Detecting faces....')
+        image = face_recognition.load_image_file(pic)
+        locs = face_recognition.face_locations(image)
+        encs = face_recognition.face_encodings(image, known_face_locations=locs)
+
+
+        # sort according to x coordinate  (left to right)
+        x_coors = np.array([l[1] for l in locs])
+        sort_idxs = np.argsort(x_coors)
+        locs = [locs[idx] for idx in sort_idxs]
+        encs = [encs[idx] for idx in sort_idxs]
+
+        plt.close()
+
+        # recognize each face
+        if len(encs) ==0: print('No faces found.')
+        names = []
+        for i in range(len(encs)):
+            matches = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=0.45) )
+
+            if matches.any():
+                matches, found_idxs  = np.unique( faces['names'][matches], return_index=True) 
+
+                if len(matches)==1:
+                    names += [matches[0]]
+                    print( matches[0])    
+                    ShowImg(pic, trim=locs[i], Timer=1.5)
+                else:                 
+                    ShowImg(pic, trim=locs[i], Timer=None)
+                    print('Multiple Faces found: '+ arr2str(matches))
+                    name_idx = int(MultipleChoice(matches, post='Which is the correct name?'))
+                    if name_idx in range(len(matches)):
+                        names += [matches[name_idx]]    
+                    plt.close()
             else:
-                print('Ok. Skipping.')
-            plt.close()
-            
-         
-    if len(names)>0:   # only do something if there were faces
-        print('Writing names to exif tag: '+arr2str(names))
-        output = ExeCmd("jhead -cl \'"+arr2str(names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
-
-        
-        # safe softlink
-        if args['softlinks']:
-            for name in names:
-                namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
-                if not os.path.exists(namefolder):    os.makedirs(namefolder)    
-                relative_from_subfolder = os.path.join('..','..',pic)
-                os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
+                ShowImg(pic, trim=locs[i], Timer=None)
+                new_name = input('Please name this face (empty if you want to skip): ')
+                if new_name!='':
+                    names += [new_name]
+                    faces['encs'] = np.vstack([faces['encs'],encs[i]])
+                    faces['names'] = np.vstack([faces['names'],new_name])
+                else:
+                    print('Ok. Skipping.')
+                plt.close()
 
 
-        # periodically save the database
-        pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
+        if len(names)>0:   # only do something if there were faces
+            print('Writing names to exif tag: '+arr2str(names))
+            output = ExeCmd("jhead -cl \'"+arr2str(names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
 
+
+            # safe softlink
+            if args['softlinks']:
+                for name in names:
+                    namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
+                    if not os.path.exists(namefolder):    os.makedirs(namefolder)    
+                    relative_from_subfolder = os.path.join('..','..',pic)
+                    os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
+
+
+            # periodically save the database
+            pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
+    except:
+        print('Error in processing image. Skipping.')    
 
 
 
