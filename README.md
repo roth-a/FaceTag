@@ -32,6 +32,8 @@ Already in the next picture it can recognize Barack and no user action is needed
 
 ![](res/demo3.jpg)
 
+and in the next picture too:
+
 ![](res/demo6.jpg)
 
 ### Folders with Softlinks  
