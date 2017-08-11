@@ -222,7 +222,7 @@ for pic in pics:
                 plt.close()
         else:
             ShowImg(pic, trim=locs[i], Timer=None)
-            new_name = input('Please Name this face (empty if you want to skip): ')
+            new_name = input('Please name this face (empty if you want to skip): ')
             names += [new_name]
             if new_name!='':
                 faces['encs'] = np.vstack([faces['encs'],encs[i]])
