@@ -6,13 +6,17 @@ Organizes pictures according to peoples faces in the pictures. It also writes th
 ## Usage
 
 It can be used in the console using
-`python face-rec.py`
+```
+python face-rec.py
+```
 or in a jupyter notebook.
 
 
 
 ### Give a picture directory
-`python face-rec.py  --folder demo`
+```
+python face-rec.py  --folder demo
+```
 and it will recursively get all jpg files.
 
 ![](res/pics.jpg)
@@ -47,7 +51,8 @@ Additionally to EXIF tags, subfolders with softlinks are created according to th
 ## Installation and dependencies
 
 Getting dlib to work is a little tricky. The following works for me (with an anaconda environment):
-```conda install -c menpo dlib 
+```
+conda install -c menpo dlib 
 pip install face_recognition
 sudo apt install jhead
 ```
