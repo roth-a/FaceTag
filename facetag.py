@@ -140,6 +140,8 @@ args = {
     'softlinks' : True,
     'softlink_folder' : 'People folders',
     'ignore_readonly' : True,
+    'training' : True,
+    'tolerance' : 0.48 ,
 }
 
 
@@ -228,55 +230,60 @@ for pic_idx, pic in enumerate(pics):
         if len(encs) ==0: print('No faces found.')
         names = []
         for i in range(len(encs)):
-            matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=0.48) )
-
+            matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=args['tolerance']) )
             
             if matches_bool.any():
-                names += [ChooseClosestMatch(matches_bool, encs[i])]
-#                 red_faces = faces['names'][matches_bool]
-#                 distances = face_recognition.face_distance(faces['encs'][matches_bool], encs[i])
-#                 print('Multiple possible Faces found:\n'+ 
-#                       arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
-#                 names += [red_faces[np.argmin(distances)]]                        
-#                 ShowImg(pic,title=names[-1],  trim=locs[i], Timer=1)
-#                 print('Choosing the closest match: '+names[-1])                    
+                names += [ChooseClosestMatch(matches_bool, encs[i])]            
             else:
-                ShowImg(pic, trim=locs[i], Timer=None)
-                print('Extending tolerance:')
-                matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=1) )
-                if matches_bool.any():
-                    new_name = ChooseClosestMatch(matches_bool, encs[i], show_img=False)
-                    mc = MultipleChoice([new_name+' is correct.', 'empty for Skip', 'Write any name to add it'], 
-                                      post='Please enter something')
-                    if mc !='0':  new_name = mc   # mc can be empty. then it will skip later
-                else:                        
-                    new_name = input('Please name this face (empty if you want to skip): ')
-                plt.close()
-                
-                if new_name!='':
-                    names += [new_name]
-                    AddFace(new_name, encs[i])
+                if args['training']:
+                    ShowImg(pic, trim=locs[i], Timer=None)
+                    print('Extending tolerance:')
+                    matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=1) )
+                    if matches_bool.any():
+                        new_name = ChooseClosestMatch(matches_bool, encs[i], show_img=False)
+                        mc = MultipleChoice([new_name+' is correct.', 
+                                             'empty for Skip', 
+                                             'Skip all unknown faces from now on. The detection is good enough.', 
+                                             'Write any name to add it'], 
+                                          post='Please enter a number or a new name.')
+                        if mc =='2':  
+                            args['training'] = False
+                            names += ["unknown"]
+                        elif mc !='0':  
+                            new_name = mc   # mc can be empty. then it will skip later
+                    else:                        
+                        new_name = input('Please name this face (empty if you want to skip): ')
+                    plt.close()
+
+                    if  args['training'] and new_name!='':
+                        names += [new_name]
+                        AddFace(new_name, encs[i])
+                    else:
+                        print('Ok. Skipping.')
                 else:
-                    print('Ok. Skipping.')
+                    ShowImg(pic, trim=locs[i], Timer=1)
+                    names += ["unknown"]
+                    
 
 
         if len(names)>0:   # only do something if there were faces
             print('Writing names to exif tag: '+arr2str(names))
-            output = ExeCmd("jhead -cl \'"+arr2str(names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
-
-
-            # safe softlink
-            if args['softlinks'] and len(pics)>1:
-                for name in names:
-                    namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
-                    if not os.path.exists(namefolder):    os.makedirs(namefolder)    
-                    relative_from_subfolder = os.path.join('..','..',pic)
-                    if not os.path.exists(os.path.join(namefolder,Path2Filename(pic))):
-                        os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
-
+            cleaned_names = [name for name in names if name !="unknown"]
+            output = ExeCmd("jhead -cl \'"+arr2str(cleaned_names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
 
             # periodically save the database
             pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
+
+        # save softlink  (even if the name is "unknown")
+        if args['softlinks'] and len(pics)>1:
+            for name in names:
+                namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
+                if not os.path.exists(namefolder):    os.makedirs(namefolder)    
+                relative_from_subfolder = os.path.join('..','..',pic)
+                if not os.path.exists(os.path.join(namefolder,Path2Filename(pic))):
+                    os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
+
+
     except KeyboardInterrupt: 
         raise
     except:
