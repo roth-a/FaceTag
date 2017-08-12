@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[19]:
+# In[ ]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -31,7 +31,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[30]:
+# In[ ]:
 
 def in_notebook():
     """
@@ -148,7 +148,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[6]:
+# In[ ]:
 
 args = {
     'folder' : ['demo'],
@@ -177,7 +177,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[7]:
+# In[ ]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -193,7 +193,7 @@ else:
 
 # ## Recognize Faces
 
-# In[8]:
+# In[ ]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -286,8 +286,8 @@ for pic_idx, pic in enumerate(pics):
 
 
         if len(names)>0:   # only do something if there were faces
-            print('Writing names to exif tag: '+arr2str(names))
             cleaned_names = [name for name in names if name !="unknown"]
+            print('Writing names to exif tag: '+arr2str(cleaned_names))
             output = ExeCmd("jhead -cl \'"+arr2str(cleaned_names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
 
             # periodically save the database
@@ -311,15 +311,5 @@ for pic_idx, pic in enumerate(pics):
         raise
     except:
         print('Error in processing image. Skipping.')    
-
-
-
-# In[33]:
-
-exif_info('/home/alexander/Bilder/Familie/Amelie Moli/2015-01/20150115_122258 edit.jpg')['DateTimeOriginal'].replace(':','-')
-
-
-# In[ ]:
-
 
 
