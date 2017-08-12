@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[112]:
+# In[19]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -20,14 +20,18 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import pickle #pickle.dump( data, open( "file.save", "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
 import subprocess 
-from pathlib import Path
+from pathlib import Path 
+import PIL.Image
+import PIL.ExifTags
+
+
 
 plt.rcParams['toolbar'] = 'None'
 
 
 # ## Functions
 
-# In[113]:
+# In[30]:
 
 def in_notebook():
     """
@@ -42,6 +46,19 @@ else:
     print('Running in Shell')
 
     
+
+def exif_info(path):
+    exif = {'DateTimeOriginal':''}
+    try:
+        img = PIL.Image.open(path)
+        exif = {
+            PIL.ExifTags.TAGS[k]: v
+            for k, v in img._getexif().items()
+            if k in PIL.ExifTags.TAGS
+        }
+    except :
+        print('Error in exif info loading')
+    return exif
 
 def ExpandDirectories(flist, ending='.jpg', not_conatin=None):
     newplotfiles = []
@@ -131,7 +148,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[114]:
+# In[6]:
 
 args = {
     'folder' : ['demo'],
@@ -160,7 +177,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[115]:
+# In[7]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -176,7 +193,7 @@ else:
 
 # ## Recognize Faces
 
-# In[116]:
+# In[8]:
 
 pics = np.array(ExpandDirectories(args['folder']))
 if args['shuffle']:
@@ -210,7 +227,9 @@ for pic_idx, pic in enumerate(pics):
 
 
         RotateImg(pic)
-        pic_data = ShowImg(pic, Timer=None)
+        
+        if  args['training']:
+            ShowImg(pic, Timer=None)
 
         print('Detecting faces....')
         image = face_recognition.load_image_file(pic)
@@ -233,7 +252,7 @@ for pic_idx, pic in enumerate(pics):
             matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=args['tolerance']) )
             
             if matches_bool.any():
-                names += [ChooseClosestMatch(matches_bool, encs[i])]            
+                names += [ChooseClosestMatch(matches_bool, encs[i], show_img=args['training'])]            
             else:
                 if args['training']:
                     ShowImg(pic, trim=locs[i], Timer=None)
@@ -261,7 +280,7 @@ for pic_idx, pic in enumerate(pics):
                     else:
                         print('Ok. Skipping.')
                 else:
-                    ShowImg(pic, trim=locs[i], Timer=1)
+#                     ShowImg(pic, trim=locs[i], Timer=1)
                     names += ["unknown"]
                     
 
@@ -280,13 +299,27 @@ for pic_idx, pic in enumerate(pics):
                 namefolder = os.path.join(args['folder'][0],'..', args['softlink_folder'], name)
                 if not os.path.exists(namefolder):    os.makedirs(namefolder)    
                 relative_from_subfolder = os.path.join('..','..',pic)
-                if not os.path.exists(os.path.join(namefolder,Path2Filename(pic))):
-                    os.symlink(relative_from_subfolder, os.path.join(namefolder,Path2Filename(pic)))
+                dst = os.path.join(namefolder,
+                       exif_info(pic)['DateTimeOriginal'].replace(':','-')
+                       +' '
+                       + Path2Filename(pic)) 
+                if not os.path.exists(dst):
+                    os.symlink(relative_from_subfolder, dst)
 
 
     except KeyboardInterrupt: 
         raise
     except:
         print('Error in processing image. Skipping.')    
+
+
+
+# In[33]:
+
+exif_info('/home/alexander/Bilder/Familie/Amelie Moli/2015-01/20150115_122258 edit.jpg')['DateTimeOriginal'].replace(':','-')
+
+
+# In[ ]:
+
 
 
