@@ -56,8 +56,7 @@ Additionally to EXIF tags, subfolders with softlinks are created according to th
 
 Getting dlib to work is a little tricky. The following works for me (with an anaconda environment):
 ```
+sudo apt install jhead python3-pip cython3
 conda install -c menpo dlib 
-pip install face_recognition
-pip install qutip
-sudo apt install jhead
+pip3 install face_recognition
 ```

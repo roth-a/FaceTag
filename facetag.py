@@ -3,15 +3,11 @@
 
 # In[ ]:
 
-# This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
+# This program detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
 # It uses the face_recognition library to detect automatically faces. 
 # It then writes the names as "Jon Doe, John Smith, ..." to the comment exif tag  (in the order from left to right)
 
-########## Install Instructions
-# conda install -c menpo dlib 
-# pip install face_recognition
-# pip qutip
 
 import face_recognition
 import os, sys,stat
@@ -24,8 +20,7 @@ import subprocess
 from pathlib import Path 
 import PIL.Image
 import PIL.ExifTags
-from qutip import parallel
-
+from multiprocessing import Pool,cpu_count
 
 
 plt.rcParams['toolbar'] = 'None'
@@ -222,8 +217,68 @@ def split_list(alist, wanted_parts=1):
     return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] 
              for i in range(wanted_parts) ]
 
-cpu_count = len(pics)//10
-splitted_pics = split_list(pics,wanted_parts=cpu_count)
+
+batch_size = 10
+splitted_pics = split_list(pics,wanted_parts=len(pics)//batch_size )
+
+
+# In[ ]:
+
+# The function  "parallel_map"  is a modified version from qutip. The copyright of the function below is:
+
+#    Copyright (c) 2011 and later, Paul D. Nation and Robert J. Johansson.
+#    All rights reserved.
+#
+#    Redistribution and use in source and binary forms, with or without
+#    modification, are permitted provided that the following conditions are
+#    met:
+#
+#    1. Redistributions of source code must retain the above copyright notice,
+#       this list of conditions and the following disclaimer.
+#
+#    2. Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#
+#    3. Neither the name of the QuTiP: Quantum Toolbox in Python nor the names
+#       of its contributors may be used to endorse or promote products derived
+#       from this software without specific prior written permission.
+#
+#    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+#    PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+###############################################################################
+
+
+def parallel_map(task, values, task_args=tuple(), task_kwargs={}, **kwargs): 
+    try:
+        pool = Pool(processes=cpu_count())
+
+        async_res = [pool.apply_async(task, (value,) + task_args, task_kwargs )
+                     for value in values]
+
+        while not all([ar.ready() for ar in async_res]):
+            for ar in async_res:
+                ar.wait(timeout=0.1)
+
+        pool.terminate()
+        pool.join()
+
+    except KeyboardInterrupt as e:
+        pool.terminate()
+        pool.join()
+        raise e
+
+
+    return [ar.get() for ar in async_res]
 
 
 # In[ ]:
@@ -352,12 +407,13 @@ def ProcessPic(pic_idx_pic_faces_array)        :
 
 for batch_idx, batch in enumerate(splitted_pics):
     print("------------------------------"+"{0:.2f}".format(batch_idx/len(splitted_pics)*100)+'% ,   '
-          +str(batch_idx)+'/'+str(len(splitted_pics))+' batches a '+str(cpu_count)+' pics')
+          +str(batch_idx)+'/'+str(len(splitted_pics))+' batches a '+str(len(batch))+' pics')
     if args['training']:  # then do it nicely one after the other such that you can input names
         for pic in batch:
             faces, names, args['training'] = ProcessPic([batch_idx//len(splitted_pics), pic, faces])
     else:
-        parameterlist = [[batch_idx//len(splitted_pics), pic, faces]  for pic in batch]
-        resultarray = parallel.parallel_map(ProcessPic, parameterlist)    
+        print('Now using '+str(cpu_count())+' cores.')
+        parameterlist = [[batch_idx//len(splitted_pics), pic, faces]  for pic in batch]        
+        resultarray = parallel_map(ProcessPic, parameterlist)    
 #         print(resultarray)  discard the result array
 
