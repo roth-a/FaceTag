@@ -11,7 +11,7 @@ After some time initial labeling faces, I organized my entire picture collection
 
 It can be used in the console using
 ```
-python facetag.py
+python3 facetag.py
 ```
 or in a jupyter notebook.
 
@@ -19,7 +19,7 @@ or in a jupyter notebook.
 
 ### Give a picture directory
 ```
-python facetag.py  --folder demo
+python3 facetag.py  --folder demo
 ```
 and it will recursively get all jpg files.
 
@@ -52,11 +52,10 @@ Additionally to EXIF tags, subfolders with softlinks are created according to th
 
 
 
-## Installation and dependencies
+## Installation
 
-Getting dlib to work is a little tricky. The following works for me (with an anaconda environment):
+The following works on linux:
 ```
-sudo apt install jhead python3-pip
-conda install -c menpo dlib 
-pip3 install face_recognition
+sudo apt install jhead python3-pip cmake libboost-all-dev  python3-tk
+sudo pip3 install numpy dlib piexif face_recognition
 ```
