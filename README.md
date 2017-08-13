@@ -58,5 +58,6 @@ Getting dlib to work is a little tricky. The following works for me (with an ana
 ```
 conda install -c menpo dlib 
 pip install face_recognition
+pip install qutip
 sudo apt install jhead
 ```
