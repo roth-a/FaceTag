@@ -204,7 +204,11 @@ def deletePerson(k):
 
 # In[ ]:
 
+args['folder'] = [f.replace('file://','') for f in  args['folder']]
 pics = np.array(ExpandDirectories(args['folder']))
+# pics = np.array([f.replace('file://','') for f in  pics])
+
+print(pics)
 if args['shuffle']:
     np.random.shuffle(pics)
 
