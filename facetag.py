@@ -198,6 +198,7 @@ def deletePerson(k):
         faces['encs'] = faces['encs'][mask]
         
 # pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )        
+# faces['names']
 
 
 # ## Recognize Faces
