@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[34]:
+# In[ ]:
 
 # This script detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -11,6 +11,7 @@
 ########## Install Instructions
 # conda install -c menpo dlib 
 # pip install face_recognition
+# pip qutip
 
 import face_recognition
 import os, sys,stat
@@ -23,6 +24,7 @@ import subprocess
 from pathlib import Path 
 import PIL.Image
 import PIL.ExifTags
+from qutip import parallel
 
 
 
@@ -31,7 +33,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[35]:
+# In[ ]:
 
 def in_notebook():
     """
@@ -148,7 +150,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[36]:
+# In[ ]:
 
 args = {
     'folder' : ['demo'],
@@ -177,7 +179,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[37]:
+# In[ ]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -191,7 +193,7 @@ else:
     
 
 
-# In[57]:
+# In[ ]:
 
 def deletePerson(k):
     print(faces['names'])
@@ -212,24 +214,40 @@ if args['shuffle']:
     np.random.shuffle(pics)
 
 
-    
-def ChooseClosestMatch(matches_bool, src_enc, show_img=True):
+# In[ ]:
+
+def split_list(alist, wanted_parts=1):
+    if wanted_parts==0: wanted_parts =1
+    length = len(alist)
+    return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] 
+             for i in range(wanted_parts) ]
+
+cpu_count = len(pics)//4 
+splitted_pics = split_list(pics,wanted_parts=cpu_count)
+
+
+# In[ ]:
+
+def ChooseClosestMatch(matches_bool, src_enc, faces, pic, loc, show_img=True):
     red_faces = faces['names'][matches_bool]
     distances = face_recognition.face_distance(faces['encs'][matches_bool], src_enc)
     print('Multiple possible Faces found:\n'+ 
           arr2str(["{0:.2f}".format(d)+'  '+name for d,name in zip(distances,red_faces)], sep='\n'))         
     name = red_faces[np.argmin(distances)]
-    if show_img:  ShowImg(pic,title=name,  trim=locs[i], Timer=1)
+    if show_img:  ShowImg(pic,title=name,  trim=loc, Timer=1)
     print('Choosing the closest match: '+name)     
     return name
 
-def AddFace(name,enc):
+def AddFace(name,enc, faces):
     faces['encs'] = np.vstack([faces['encs'],enc])
     faces['names'] = np.hstack([faces['names'],name])
-        
+    return faces
 
-for pic_idx, pic in enumerate(pics):
-    print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
+        
+def ProcessPic(pic_idx_pic_faces_array)        :    
+    pic_idx, pic, faces = pic_idx_pic_faces_array[0], pic_idx_pic_faces_array[1], pic_idx_pic_faces_array[2]
+    training = args['training']
+#     print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
     print('Loading: '+pic)
     try:
         # make it writable
@@ -240,8 +258,7 @@ for pic_idx, pic in enumerate(pics):
 
         RotateImg(pic)
         
-        if  args['training']:
-            ShowImg(pic, Timer=None)
+        if  training:   ShowImg(pic, Timer=None)
 
         print('Detecting faces....')
         image = face_recognition.load_image_file(pic)
@@ -255,7 +272,7 @@ for pic_idx, pic in enumerate(pics):
         locs = [locs[idx] for idx in sort_idxs]
         encs = [encs[idx] for idx in sort_idxs]
 
-        plt.close()
+        if  training:   plt.close()
 
         # recognize each face
         if len(encs) ==0: print('No faces found.')
@@ -264,31 +281,31 @@ for pic_idx, pic in enumerate(pics):
             matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=args['tolerance']) )
             
             if matches_bool.any():
-                names += [ChooseClosestMatch(matches_bool, encs[i], show_img=args['training'])]            
+                names += [ChooseClosestMatch(matches_bool, encs[i],faces, pic, locs[i], show_img=training)]            
             else:
-                if args['training']:
+                if training:
                     ShowImg(pic, trim=locs[i], Timer=None)
                     print('Extending tolerance:')
                     matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=1) )
                     if matches_bool.any():
-                        new_name = ChooseClosestMatch(matches_bool, encs[i], show_img=False)
+                        new_name = ChooseClosestMatch(matches_bool, encs[i], faces, pic, locs[i], show_img=False)
                         mc = MultipleChoice([new_name+' is correct.', 
                                              'empty for Skip', 
                                              'Skip all unknown faces from now on. The detection is good enough.', 
                                              'Write any name to add it'], 
                                           post='Please enter a number or a new name.')
                         if mc =='2':  
-                            args['training'] = False
+                            training = False
                             names += ["unknown"]
                         elif mc !='0':  
                             new_name = mc   # mc can be empty. then it will skip later
                     else:                        
                         new_name = input('Please name this face (empty if you want to skip): ')
-                    plt.close()
+                    if training:   plt.close()
 
-                    if  args['training'] and new_name!='':
+                    if  training and new_name!='':
                         names += [new_name]
-                        AddFace(new_name, encs[i])
+                        faces = AddFace(new_name, encs[i], faces)
                     else:
                         print('Ok. Skipping.')
                 else:
@@ -302,8 +319,9 @@ for pic_idx, pic in enumerate(pics):
             print('Writing names to exif tag: '+arr2str(cleaned_names))
             output = ExeCmd("jhead -cl \'"+arr2str(cleaned_names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
 
-            # periodically save the database
-            pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
+            # save the database if names were added
+            if training:
+                pickle.dump( faces, open( args['database'], "wb" ) ) #data = pickle.load( open( "file.save", "rb" ) )
 
         # save softlink  (even if the name is "unknown")
         if args['softlinks'] and len(pics)>1:
@@ -317,11 +335,28 @@ for pic_idx, pic in enumerate(pics):
                        + Path2Filename(pic)) 
                 if not os.path.exists(dst):
                     os.symlink(relative_from_subfolder, dst)
-
-
     except KeyboardInterrupt: 
         raise
     except:
         print('Error in processing image. Skipping.')    
+    return  faces, names, training
+    
+        
 
+        
+        
+
+# for pic_idx, pic in enumerate(pics):
+#     print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
+#     faces, names, args['training'] = ProcessPic(pic_idx, pic, faces)    
+
+for batch_idx, batch in enumerate(splitted_pics):
+    print("------------------------------"+"{0:.2f}".format(batch_idx/len(splitted_pics)*100)+'% ,   '+str(batch_idx)+'/'+str(len(splitted_pics)))
+    if args['training']:  # then do it nicely one after the other such that you can input names
+        for pic in batch:
+            faces, names, args['training'] = ProcessPic([batch_idx//len(splitted_pics), pic, faces])
+    else:
+        parameterlist = [[batch_idx//len(splitted_pics), pic, faces]  for pic in batch]
+        resultarray = parallel.parallel_map(ProcessPic, parameterlist)    
+#         print(resultarray)  discard the result array
 
