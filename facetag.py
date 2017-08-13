@@ -249,6 +249,7 @@ def ProcessPic(pic_idx_pic_faces_array)        :
     training = args['training']
 #     print("------------------------------"+"{0:.2f}".format(pic_idx/len(pics)*100)+'% ,   '+str(pic_idx)+'/'+str(len(pics)))
     print('Loading: '+pic)
+    names = []
     try:
         # make it writable
         if args['ignore_readonly']:
@@ -276,7 +277,6 @@ def ProcessPic(pic_idx_pic_faces_array)        :
 
         # recognize each face
         if len(encs) ==0: print('No faces found.')
-        names = []
         for i in range(len(encs)):
             matches_bool = np.array(face_recognition.compare_faces(faces['encs'], encs[i], tolerance=args['tolerance']) )
             
@@ -352,7 +352,7 @@ def ProcessPic(pic_idx_pic_faces_array)        :
 
 for batch_idx, batch in enumerate(splitted_pics):
     print("------------------------------"+"{0:.2f}".format(batch_idx/len(splitted_pics)*100)+'% ,   '
-          +str(batch_idx)+'/'+str(len(splitted_pics))+' batches a 10 pics')
+          +str(batch_idx)+'/'+str(len(splitted_pics))+' batches a '+str(cpu_count)+' pics')
     if args['training']:  # then do it nicely one after the other such that you can input names
         for pic in batch:
             faces, names, args['training'] = ProcessPic([batch_idx//len(splitted_pics), pic, faces])
