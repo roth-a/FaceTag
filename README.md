@@ -1,10 +1,10 @@
 # FaceTag
 
 Organizes pictures according to peoples faces in the pictures. It also writes the peoples names in the usercomment EXIF tag. It uses the amazing [face_recognition](https://github.com/ageitgey/face_recognition) based on dlib. 
-This brings super easy face recognition to you without uploading any to facebook, google, etc. No internet connection required! Everything stays on your computer.
+This brings super easy face recognition to you without uploading any to facebook, google, etc. No internet connection required! Everything stays on your computer. 
 
 
-After some time initial labeling faces, I organized my entire picture collection of 20k pictures over night. The unrecognized faces are softliked in the folder "unkown" (this also serves as a pool to improve face recognition for a future run).
+After some time initial labeling faces, I organized my entire picture collection of 20k pictures over night (FaceTag is using all cores on your system). The unrecognized faces are softliked in the folder "unkown" (this also serves as a pool to improve face recognition for a future run).
 
 
 ## Usage
