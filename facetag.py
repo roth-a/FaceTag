@@ -351,7 +351,8 @@ def ProcessPic(pic_idx_pic_faces_array)        :
 #     faces, names, args['training'] = ProcessPic(pic_idx, pic, faces)    
 
 for batch_idx, batch in enumerate(splitted_pics):
-    print("------------------------------"+"{0:.2f}".format(batch_idx/len(splitted_pics)*100)+'% ,   '+str(batch_idx)+'/'+str(len(splitted_pics)))
+    print("------------------------------"+"{0:.2f}".format(batch_idx/len(splitted_pics)*100)+'% ,   '
+          +str(batch_idx)+'/'+str(len(splitted_pics))+' batches a 10 pics')
     if args['training']:  # then do it nicely one after the other such that you can input names
         for pic in batch:
             faces, names, args['training'] = ProcessPic([batch_idx//len(splitted_pics), pic, faces])
