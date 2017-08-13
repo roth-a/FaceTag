@@ -222,7 +222,7 @@ def split_list(alist, wanted_parts=1):
     return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] 
              for i in range(wanted_parts) ]
 
-cpu_count = len(pics)//4 
+cpu_count = len(pics)//10
 splitted_pics = split_list(pics,wanted_parts=cpu_count)
 
 
@@ -272,7 +272,7 @@ def ProcessPic(pic_idx_pic_faces_array)        :
         locs = [locs[idx] for idx in sort_idxs]
         encs = [encs[idx] for idx in sort_idxs]
 
-        if  training:   plt.close()
+        plt.close()
 
         # recognize each face
         if len(encs) ==0: print('No faces found.')
@@ -301,7 +301,7 @@ def ProcessPic(pic_idx_pic_faces_array)        :
                             new_name = mc   # mc can be empty. then it will skip later
                     else:                        
                         new_name = input('Please name this face (empty if you want to skip): ')
-                    if training:   plt.close()
+                    plt.close()
 
                     if  training and new_name!='':
                         names += [new_name]
