@@ -26,7 +26,7 @@ and it will recursively get all jpg files.
 ![](res/pics.jpg)
 and also rotate them according to the Orientation exif tag using [jhead](http://www.sentex.net/~mwandel/jhead/).
 
-### Label first faces 
+### Label faces first
 It asks for the names of all unknown people in a picture and adds them to it's name database.
 ![](res/demo1.jpg)
 ![](res/demo2.jpg)
@@ -36,7 +36,7 @@ The exif user_comment tag is filled with the names from the left to the right :-
 ![](res/exif.jpg)
 
 ### Face recognition and labeling already working automatically
-Already in the next picture it can recognize Barack and no user action is needed.
+Already in the folloing picture face recognition works without any further input.
 
 ![](res/demo3.jpg)
 
