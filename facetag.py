@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[124]:
 
 # This program detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -21,14 +21,14 @@ from pathlib import Path
 import PIL.Image
 import PIL.ExifTags
 from multiprocessing import Pool,cpu_count
-
+# import piexif  (does not handle the usercomment correctly)
 
 plt.rcParams['toolbar'] = 'None'
 
 
 # ## Functions
 
-# In[ ]:
+# In[110]:
 
 def in_notebook():
     """
@@ -145,7 +145,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[ ]:
+# In[111]:
 
 args = {
     'folder' : ['demo'],
@@ -174,7 +174,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[ ]:
+# In[112]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -188,7 +188,7 @@ else:
     
 
 
-# In[ ]:
+# In[113]:
 
 def deletePerson(k):
     print(faces['names'])
@@ -203,7 +203,7 @@ def deletePerson(k):
 
 # ## Recognize Faces
 
-# In[ ]:
+# In[114]:
 
 args['folder'] = [f.replace('file://','') for f in  args['folder']]
 pics = np.array(ExpandDirectories(args['folder']))
@@ -214,7 +214,7 @@ if args['shuffle']:
     np.random.shuffle(pics)
 
 
-# In[ ]:
+# In[115]:
 
 def split_list(alist, wanted_parts=1):
     if wanted_parts==0: wanted_parts =1
@@ -227,7 +227,7 @@ batch_size = 10
 splitted_pics = split_list(pics,wanted_parts=len(pics)//batch_size )
 
 
-# In[ ]:
+# In[116]:
 
 # The function  "parallel_map"  is a modified version from qutip. The copyright of the function below is:
 
@@ -286,6 +286,30 @@ def parallel_map(task, values, task_args=tuple(), task_kwargs={}, **kwargs):
     return [ar.get() for ar in async_res]
 
 
+# In[117]:
+
+# def ListExifDict(filename):
+#     exif_dict = piexif.load(filename)
+#     print(exif_dict)
+# #     for ifd in ("0th", "Exif", "GPS", "1st", "Interop"):
+# #         for k,v in exif_dict[ifd].items():
+# #             print(piexif.TAGS[ifd][k]["name"],v)
+
+# ListExifDict(pics[2])        
+
+def WriteExifComment(filename, comment):
+#     exif_dict = piexif.load(filename)
+#     exif_dict["Exif"][37510] = comment
+#     del exif_dict["thumbnail"]
+#     im = PIL.Image.open(filename)
+#     im.save(filename, "jpeg", exif=piexif.dump(exif_dict))
+    ExeCmd("jhead -cl \'"+comment+"\'   \'" + filename+"\'" , errormessage='Error: Could not write Tags.' )         
+
+
+# WriteExifComment(pics[2], 'test text2')        
+# ListExifDict(pics[2])        
+
+
 # In[ ]:
 
 def ChooseClosestMatch(matches_bool, src_enc, faces, pic, loc, show_img=True):
@@ -304,6 +328,7 @@ def AddFace(name,enc, faces):
     return faces
 
         
+    
 def ProcessPic(pic_idx_pic_faces_array)        :    
     pic_idx, pic, faces = pic_idx_pic_faces_array[0], pic_idx_pic_faces_array[1], pic_idx_pic_faces_array[2]
     training = args['training']
@@ -377,7 +402,7 @@ def ProcessPic(pic_idx_pic_faces_array)        :
         if len(names)>0:   # only do something if there were faces
             cleaned_names = [name for name in names if name !="unknown"]
             print('Writing names to exif tag: '+arr2str(cleaned_names))
-            output = ExeCmd("jhead -cl \'"+arr2str(cleaned_names)+"\'   \'" + pic+"\'" , errormessage='Error: Could not write Tags.' )     
+            WriteExifComment(pic, arr2str(cleaned_names))
 
             # save the database if names were added
             if training:
