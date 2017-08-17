@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[124]:
+# In[125]:
 
 # This program detects faces in picture, rotates the pictures automatically according to the exif tag (jhead must be installed)
 # asks for the Names of the people and adds the names as in the Note field of the Exif info.
@@ -28,7 +28,7 @@ plt.rcParams['toolbar'] = 'None'
 
 # ## Functions
 
-# In[110]:
+# In[126]:
 
 def in_notebook():
     """
@@ -145,7 +145,7 @@ def Path2Filename(path,  RemoveEnding = False ):
 
 # ## Arguments
 
-# In[111]:
+# In[127]:
 
 args = {
     'folder' : ['demo'],
@@ -174,7 +174,7 @@ if not in_notebook():
 
 # ## Load Database
 
-# In[112]:
+# In[128]:
 
 if  os.path.exists(args['database']): 
     faces = pickle.load( open( args['database'], "rb" ) )
@@ -188,7 +188,7 @@ else:
     
 
 
-# In[113]:
+# In[129]:
 
 def deletePerson(k):
     print(faces['names'])
@@ -203,10 +203,12 @@ def deletePerson(k):
 
 # ## Recognize Faces
 
-# In[114]:
+# In[135]:
 
 args['folder'] = [f.replace('file://','') for f in  args['folder']]
 pics = np.array(ExpandDirectories(args['folder']))
+if len(pics) == 0:
+    raise ValueError('No pictures found.')
 # pics = np.array([f.replace('file://','') for f in  pics])
 
 print(pics)
