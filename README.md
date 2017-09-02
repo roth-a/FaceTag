@@ -4,7 +4,7 @@ Organizes pictures according to peoples faces in the pictures. It also writes th
 This brings super easy face recognition to you without uploading any to facebook, google, etc. No internet connection required! Everything stays on your computer. 
 
 
-After some time initial labeling faces, I organized my entire picture collection of 20k pictures over night (FaceTag is using all cpu cores). The unrecognized faces are softliked in the folder "unkown" (this also serves as a pool to improve face recognition for a future run).
+After some time initial labeling faces, I organized my entire picture collection of 20k pictures over night (FaceTag is using all cpu cores). The unrecognized faces are softlinked in the folder "unkown" (this also serves as a pool to improve face recognition for a future run).
 
 
 ## Usage
