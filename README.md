@@ -57,5 +57,5 @@ Additionally to EXIF tags, subfolders with softlinks are created according to th
 The following works on linux:
 ```
 sudo apt install jhead python3-pip cmake libboost-all-dev  python3-tk
-sudo pip3 install numpy dlib piexif face_recognition
+pip3 install numpy dlib piexif face_recognition
 ```
